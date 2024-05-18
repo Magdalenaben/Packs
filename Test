@@ -1,0 +1,124 @@
+from kivy.app import App
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.label import Label
+from kivy.uix.button import Button
+from kivy.uix.popup import Popup
+from kivy.uix.dropdown import DropDown
+from kivy.uix.textinput import TextInput
+from kivy.metrics import dp
+
+# Define chalet details data
+chalet_details = {
+    "Chalet Luna V": {"normal_occupancy": 2, "num_toilets": 1, "num_showers": 1, "num_bathtubs": 0},
+    "Chalet Bella": {"normal_occupancy": 4, "num_toilets": 2, "num_showers": 2, "num_bathtubs": 1},
+    "Chalet Aurora": {"normal_occupancy": 3, "num_toilets": 2, "num_showers": 1, "num_bathtubs": 0},
+    "Chalet Aberot Penthouse": {"normal_occupancy": 6, "num_toilets": 2, "num_showers": 2, "num_bathtubs": 0},
+    "Chalet Aberot Staubbach": {"normal_occupancy": 6, "max_occupancy": 8, "num_toilets": 3, "num_showers": 1, "num_bathtubs": 1},
+    "Chalet Alpina": {"normal_occupancy": 2, "max_occupancy": 4, "num_toilets": 1, "num_showers": 0, "num_bathtubs": 1},
+    "Chalet Am Acher": {"normal_occupancy": 6, "num_toilets": 2, "num_showers": 1, "num_bathtubs": 1},
+    "Chalet Arven": {"normal_occupancy": 5, "max_occupancy": 6, "num_toilets": 2, "num_showers": 1, "num_bathtubs": 1},
+    "Chalet Bella Vista": {"normal_occupancy": 4, "num_toilets": 2, "num_showers": 2, "num_bathtubs": 0},
+    "Chalet Belmont 8": {"normal_occupancy": 4, "max_occupancy": 8, "num_toilets": 2, "num_showers": 2, "num_bathtubs": 0},
+    "Chalet Belmont 3": {"normal_occupancy": 2, "max_occupancy": 3, "num_toilets": 1, "num_showers": 1, "num_bathtubs": 0},
+    "Chalet Belmont 7": {"normal_occupancy": 4, "num_toilets": 1, "num_showers": 1, "num_bathtubs": 0},
+    "Chalet Belmont Penthouse": {"normal_occupancy": 2, "num_toilets": 1, "num_showers": 1, "num_bathtubs": 0},
+    "Chalet Bergrose": {"normal_occupancy": 4, "num_toilets": 2, "num_showers": 2, "num_bathtubs": 0},
+    "Chalet Des Alpes": {"normal_occupancy": 4, "num_toilets": 2, "num_showers": 2, "num_bathtubs": 0},
+    "Chalet Hunnenfluh": {"normal_occupancy": 4, "num_toilets": 1, "num_showers": 1, "num_bathtubs": 0}
+}
+
+class StandardizedPacksApp(App):
+    
+    def build(self):
+        # Create layout for main screen
+        layout = GridLayout(cols=1, padding=dp(10))
+        
+        # Create dropdown menu for chalet selection
+        dropdown = DropDown()
+        for chalet_name in chalet_details:
+            button = Button(text=chalet_name, size_hint_y=None, height=dp(40))
+            button.bind(on_release=lambda btn: dropdown.select(btn.text))
+            dropdown.add_widget(button)
+        
+        # Add button to select chalet
+        select_button = Button(text="Select Chalet", size_hint=(None, None), size=(dp(200), dp(50)))
+        select_button.bind(on_release=dropdown.open)
+        dropdown.bind(on_select=self.select_chalet)
+        layout.add_widget(select_button)
+        
+        # Add label for user input
+        layout.add_widget(Label(text="Number of Guests Staying:"))
+        
+        # Add text input for user to enter number of guests
+        self.input_guests = TextInput(multiline=False)
+        layout.add_widget(self.input_guests)
+        
+        # Add button to calculate packs
+        calculate_button = Button(text="Calculate Packs", size_hint=(None, None), size=(dp(200), dp(50)))
+        calculate_button.bind(on_press=self.calculate_packs)
+        layout.add_widget(calculate_button)
+        
+        # Add label for displaying results
+        self.result_label = Label(text="")
+        layout.add_widget(self.result_label)
+        
+        return layout
+    
+    def select_chalet(self, instance, chalet_name):
+        self.selected_chalet = chalet_name
+    
+    def calculate_packs(self, instance):
+        try:
+            # Get number of guests from user input
+            num_guests = int(self.input_guests.text)
+            
+            # Get chalet details
+            chalet_info = chalet_details[self.selected_chalet]
+            
+            # Calculate standardized packs based on number of guests and chalet details
+            normal_occupancy = chalet_info.get("normal_occupancy", 0)
+            max_occupancy = chalet_info.get("max_occupancy", normal_occupancy)
+            
+            welcome_packs = max(normal_occupancy, num_guests)
+            toiletries_packs = num_guests
+            towel_packs = normal_occupancy
+            
+            # Calculate bathroom essentials
+            num_toilets = chalet_info["num_toilets"]
+            num_showers = chalet_info["num_showers"]
+            num_bathtubs = chalet_info["num_bathtubs"]
+            
+            toilet_rolls = num_toilets * 4
+            bathmats = num_showers + num_bathtubs
+            bin_bags = num_toilets
+            
+            # Calculate kitchen packs
+            kitchen_packs = 1
+            
+            # Calculate extra beds and packs if guests exceed normal occupancy
+            extra_beds = max(0, num_guests - normal_occupancy)
+            extra_welcome_packs = extra_beds
+            extra_toiletries_packs = extra_beds
+            extra_towel_packs = extra_beds
+            
+            # Create result text
+            result_text = f"Selected Chalet: {self.selected_chalet}\n"
+            result_text += f"Number of Guests: {num_guests}\n"
+            result_text += f"Welcome Packs: {welcome_packs + extra_welcome_packs}\n"
+            result_text += f"Toiletries Packs: {toiletries_packs + extra_toiletries_packs}\n"
+            result_text += f"Towel Packs: {towel_packs + extra_towel_packs}\n"
+            result_text += f"Toilet Rolls: {toilet_rolls}\n"
+            result_text += f"Bathmats: {bathmats}\n"
+            result_text += f"Bin Bags: {bin_bags}\n"
+            result_text += f"Kitchen Packs: {kitchen_packs}"
+            
+            # Update the result label with the calculated packs
+            self.result_label.text = result_text
+        except ValueError:
+            # Show error message if input is not a valid number
+            error_popup = Popup(title='Error', content=Label(text='Please enter a valid number.'), size_hint=(None, None), size=(dp(200), dp(100)))
+            error_popup.open()
+
+# Run the application
+if __name__ == '__main__':
+    StandardizedPacksApp().run()
